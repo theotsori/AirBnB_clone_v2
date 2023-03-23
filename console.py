@@ -10,6 +10,7 @@ from models.state import State
 from models.city import City
 from models.amenity import Amenity
 from models.review import Review
+from datetime import datetime
 
 
 class HBNBCommand(cmd.Cmd):
@@ -73,7 +74,7 @@ class HBNBCommand(cmd.Cmd):
                 pline = pline[2].strip()  # pline is now str
                 if pline:
                     # check for *args or **kwargs
-                    if pline[0] is '{' and pline[-1] is'}'\
+                    if pline[0] == '{' and pline[-1] =='}'\
                             and type(eval(pline)) is dict:
                         _args = pline
                     else:
@@ -113,18 +114,54 @@ class HBNBCommand(cmd.Cmd):
         """ Overrides the emptyline method of CMD """
         pass
 
-    def do_create(self, args):
-        """ Create an object of any class"""
-        if not args:
+    def do_create(self, arg):
+        """Creates a new instance of BaseModel,
+        saves it to the JSON file, and prints the id"""
+        from models import storage
+        args = arg.split()
+
+        if len(args) == 0:
             print("** class name missing **")
             return
-        elif args not in HBNBCommand.classes:
+        elif args[0] not in self.classes:
             print("** class doesn't exist **")
             return
-        new_instance = HBNBCommand.classes[args]()
+
+        cls = self.classes[args[0]]
+        kwargs = {}
+
+        # Parse the arguments
+        for arg in args[1:]:
+            try:
+                # Parse key=value arguments
+                key, value = arg.split('=', maxsplit=1)
+                if value.startswith('"') and value.endswith('"'):
+                    # Parse string values
+                    value = value[1:-1].replace('_', ' ').replace('\\"', '"')
+                elif '.' in value:
+                    # Parse float values
+                    value = float(value)
+                else:
+                    # Parse integer values
+                    value = int(value)
+                kwargs[key] = value
+            except (ValueError, AttributeError, TypeError):
+                # Ignore arguments that can't be parsed
+                pass
+
+        # Set created_at and updated_at if not provided
+        if 'created_at' not in kwargs:
+            kwargs['created_at'] = datetime.now()
+        if 'updated_at' not in kwargs:
+            kwargs['updated_at'] = datetime.now()
+
+        # Create the instance and save to file
+        new_instance = cls(**kwargs)
+        storage.new(new_instance)
         storage.save()
+
+        # Print the new instance's id
         print(new_instance.id)
-        storage.save()
 
     def help_create(self):
         """ Help information for the create method """
@@ -272,7 +309,7 @@ class HBNBCommand(cmd.Cmd):
                 args.append(v)
         else:  # isolate args
             args = args[2]
-            if args and args[0] is '\"':  # check for quoted arg
+            if args and args[0] == '\"':  # check for quoted arg
                 second_quote = args.find('\"', 1)
                 att_name = args[1:second_quote]
                 args = args[second_quote + 1:]
@@ -280,10 +317,10 @@ class HBNBCommand(cmd.Cmd):
             args = args.partition(' ')
 
             # if att_name was not quoted arg
-            if not att_name and args[0] is not ' ':
+            if not att_name and args[0] != ' ':
                 att_name = args[0]
             # check for quoted val arg
-            if args[2] and args[2][0] is '\"':
+            if args[2] and args[2][0] == '\"':
                 att_val = args[2][1:args[2].find('\"', 1)]
 
             # if att_val was not quoted arg
