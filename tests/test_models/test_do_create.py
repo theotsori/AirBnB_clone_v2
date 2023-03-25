@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-""" """
+""" Test case for do create """
 
 import unittest
 from console import HBNBCommand
@@ -7,59 +7,58 @@ from models.base_model import BaseModel
 from models import storage
 
 
-class TestCreateCommand(unittest.TestCase):
+class TestConsoleCreate(unittest.TestCase):
+    """Test console create command"""
+
     def setUp(self):
-        """ """
-        self.cli = HBNBCommand()
+        self.console = HBNBCommand()
 
     def tearDown(self):
-        """ """
-        storage.delete_all()
+        try:
+            os.remove("file.json")
+        except:
+            pass
 
-    def test_create_base_model(self):
-        """ """
-        self.cli.onecmd('create BaseModel name="test" age=18')
-        obj_id = self.cli.stdout.split('\n')[0]
-        obj = storage.all()['BaseModel.{}'.format(obj_id)]
-        self.assertEqual(obj.name, 'test')
-        self.assertEqual(obj.age, 18)
+    def test_create_valid_with_params(self):
+        """Test create command with valid class and params"""
+        self.console.onecmd("create BaseModel name=\"My House\" value=4.2 flag=True")
+        with open("file.json", "r") as f:
+            file_content = f.read()
+            self.assertIn("My House", file_content)
+            self.assertIn("4.2", file_content)
+            self.assertIn("True", file_content)
 
-    def test_create_base_model_invalid_params(self):
-        """ """
-        self.cli.onecmd('create BaseModel name="test" age="eighteen" foo=bar')
-        obj_id = self.cli.stdout.split('\n')[0]
-        obj = storage.all().get('BaseModel.{}'.format(obj_id))
-        self.assertIsNone(obj)
+    def test_create_valid_with_params_quote(self):
+        """Test create command with quotes in params"""
+        self.console.onecmd("create BaseModel name=\"My \\\"Big\\\" House\"")
+        with open("file.json", "r") as f:
+            file_content = f.read()
+            self.assertIn('My "Big" House', file_content)
 
-    def test_create_invalid_class(self):
-        """ """
-        self.cli.onecmd('create SomeInvalidClass name="test" age=18')
-        output = self.cli.stdout.strip()
-        self.assertEqual(output, "** class doesn't exist **")
+    def test_create_valid_with_params_underscore(self):
+        """Test create command with underscores in params"""
+        self.console.onecmd("create BaseModel name=\"My_little_house\"")
+        with open("file.json", "r") as f:
+            file_content = f.read()
+            self.assertIn("My little house", file_content)
 
-    def test_create_missing_class(self):
-        """ """
-        self.cli.onecmd('create')
-        output = self.cli.stdout.strip()
-        self.assertEqual(output, "** class name missing **")
+    def test_create_valid_with_params_int(self):
+        """Test create command with integer param"""
+        self.console.onecmd("create BaseModel value=42")
+        with open("file.json", "r") as f:
+            file_content = f.read()
+            self.assertIn("42", file_content)
 
-    def test_create_string_with_underscore(self):
-        """ """
-        self.cli.onecmd('create BaseModel name="My_little_house"')
-        obj_id = self.cli.stdout.split('\n')[0]
-        obj = storage.all()['BaseModel.{}'.format(obj_id)]
-        self.assertEqual(obj.name, 'My little house')
+    def test_create_valid_with_params_float(self):
+        """Test create command with float param"""
+        self.console.onecmd("create BaseModel value=42.24")
+        with open("file.json", "r") as f:
+            file_content = f.read()
+            self.assertIn("42.24", file_content)
 
-    def test_create_float_value(self):
-        """ """
-        self.cli.onecmd('create BaseModel score=3.14')
-        obj_id = self.cli.stdout.split('\n')[0]
-        obj = storage.all()['BaseModel.{}'.format(obj_id)]
-        self.assertEqual(obj.score, 3.14)
-
-    def test_create_integer_value(self):
-        """ """
-        self.cli.onecmd('create BaseModel age=25')
-        obj_id = self.cli.stdout.split('\n')[0]
-        obj = storage.all()['BaseModel.{}'.format(obj_id)]
-        self.assertEqual(obj.age, 25)
+    def test_create_valid_with_params_invalid(self):
+        """Test create command with invalid param"""
+        self.console.onecmd("create BaseModel value=invalid")
+        with open("file.json", "r") as f:
+            file_content = f.read()
+            self.assertNotIn("value", file_content)

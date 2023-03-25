@@ -115,53 +115,40 @@ class HBNBCommand(cmd.Cmd):
         pass
 
     def do_create(self, arg):
-        """Creates a new instance of BaseModel,
-        saves it to the JSON file, and prints the id"""
-        from models import storage
-        args = arg.split()
-
-        if len(args) == 0:
+        """Create a new instance of a given class"""
+        if not arg:
             print("** class name missing **")
             return
-        elif args[0] not in self.classes:
+        args = arg.split()
+        if args[0] not in models.classes:
             print("** class doesn't exist **")
             return
-
-        cls = self.classes[args[0]]
-        kwargs = {}
-
-        # Parse the arguments
-        for arg in args[1:]:
-            try:
-                # Parse key=value arguments
-                key, value = arg.split('=', maxsplit=1)
+        try:
+            kwargs = {}
+            for param in args[1:]:
+                key_value = param.split("=")
+                if len(key_value) != 2:
+                    continue
+                key = key_value[0]
+                value = key_value[1]
                 if value.startswith('"') and value.endswith('"'):
-                    # Parse string values
                     value = value[1:-1].replace('_', ' ').replace('\\"', '"')
                 elif '.' in value:
-                    # Parse float values
-                    value = float(value)
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        continue
                 else:
-                    # Parse integer values
-                    value = int(value)
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
                 kwargs[key] = value
-            except (ValueError, AttributeError, TypeError):
-                # Ignore arguments that can't be parsed
-                pass
-
-        # Set created_at and updated_at if not provided
-        if 'created_at' not in kwargs:
-            kwargs['created_at'] = datetime.now()
-        if 'updated_at' not in kwargs:
-            kwargs['updated_at'] = datetime.now()
-
-        # Create the instance and save to file
-        new_instance = cls(**kwargs)
-        storage.new(new_instance)
-        storage.save()
-
-        # Print the new instance's id
-        print(new_instance.id)
+            obj = models.classes[args[0]](**kwargs)
+            obj.save()
+            print(obj.id)
+        except Exception as e:
+            print(e)
 
     def help_create(self):
         """ Help information for the create method """
