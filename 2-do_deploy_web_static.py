@@ -1,39 +1,43 @@
 #!/usr/bin/python3
-"""Fabric script that distributes an archive to your web servers"""
+"""Fabric script that distributes an archive to web servers"""
+import fabric
+from fabric.api import put, run, env
+from invoke import task
+from os import path
 
-from fabric.api import env, run, put
-import os
-
+env.user = 'ubuntu'
 env.hosts = ['54.144.138.53', '35.168.7.192']
 
 
+@task
 def do_deploy(archive_path):
-    """Distributes an archive to your web servers"""
+    """Distributes an archive to web servers"""
 
-    if not os.path.exists(archive_path):
+    if not os.path.isfile(archive_path):
         return False
+    try:
+        filename = archive_path.split("/")[-1].split(".")[0]
+        put(archive_path, "/tmp/")
 
-    filename = os.path.basename(archive_path)
-    name_only = os.path.splitext(filename)[0]
+        run('mkdir -p /data/web_static/releases/{}/'.format(filename))
 
-    put(archive_path, '/tmp/{}'.format(filename))
+        run('tar -xzf /tmp/{} -C /data/web_static/releases/{}/'
+            .format(filename, filename))
 
-    run('sudo mkdir -p /data/web_static/releases/{}/'.format(name_only))
+        run('rm -rf /tmp/{}.tgz'.format(filename))
 
-    run('sudo tar -xzf /tmp/{} -C /data/web_static/releases/{}/'
-        .format(filename, name_only))
+        run('mv /data/web_static/releases/{}/web_static/* \
+            /data/web_static/releases/{}/'.format(filename, filename))
 
-    run('sudo rm /tmp/{}'.format(filename))
+        run('rm -rf /data/web_static/releases/{}/web_static'
+            .format(filename))
 
-    run('sudo mv /data/web_static/releases/{}/web_static/* \
-        /data/web_static/releases/{}/'.format(name_only, name_only))
-    run('sudo rm -rf /data/web_static/releases/{}/web_static'
-        .format(name_only))
+        run('rm -rf /data/web_static/current')
 
-    run('sudo rm -rf /data/web_static/current')
+        run('ln -s /data/web_static/releases/{}/ \
+            /data/web_static/current'.format(filename))
 
-    run('sudo ln -s /data/web_static/releases/{}/ \
-        /data/web_static/current'.format(name_only))
-
-    print("New version deployed!")
-    return True
+        print("New version deployed!")
+        return True
+    except Exception:
+        return False
