@@ -1,24 +1,36 @@
 #!/usr/bin/python3
 """
-Script that starts a Flask web application.
+Starts a Flask web application.
 """
 from flask import Flask, render_template
 from models import storage
-from models.state import State
+
 app = Flask(__name__)
 
 
 @app.route('/states', strict_slashes=False)
+def states():
+    """Displays a HTML page with a list of all State objects."""
+    states = storage.all('State')
+    return render_template('9-states.html', states=states)
+
+
 @app.route('/states/<id>', strict_slashes=False)
-def states_list():
-    """Display HTML page: list of all State objects present in DBStorage"""
-    path = '9-states.html'
-    states = storage.all(State)
-    return render_template(path, states=states, id=id)
+def cities_by_state(id):
+    """
+    Displays a HTML page with a list of all City objects linked to a State
+    object.
+    """
+    state = storage.get('State', id)
+    if state is None:
+        return render_template('9-not_found.html')
+    else:
+        return render_template('9-states.html', state=state)
+
 
 @app.teardown_appcontext
 def teardown_db(exception):
-    """After each request remove the current SQLAlchemy Session"""
+    """Closes the database session after each request."""
     storage.close()
 
 
