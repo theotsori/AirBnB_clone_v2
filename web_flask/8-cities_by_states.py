@@ -10,23 +10,25 @@ from models.state import State
 app = Flask(__name__)
 
 
-@app.route('/cities_by_states', strict_slashes=False)
-def cities_by_states():
-    """
-    Display a HTML page with a list of all State objects sorted by name,
-    along with a list of City objects linked to the State sorted by name.
-    """
-    states = storage.all(State).values()
-    states_sorted = sorted(states, key=lambda s: s.name)
-    return render_template('8-cities_by_states.html', states=states_sorted)
-
-
 @app.teardown_appcontext
-def teardown_appcontext(exception):
+def teardown(self):
     """
     Remove the current SQLAlchemy Session after each request.
     """
     storage.close()
+
+
+@app.route('/cities_by_states', strict_slashes=False)
+def cities_by_states():
+    """
+    Display a HTML page that lists all State objects
+    present in DBStorage sorted by name (A->Z),
+    and their linked City objects sorted by name (A->Z).
+    """
+    states = storage.all(State).values()
+    sorted_states = sorted(states, key=lambda s: s.name)
+
+    return render_template('8-cities_by_states.html', states=sorted_states)
 
 
 if __name__ == '__main__':
