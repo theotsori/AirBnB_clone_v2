@@ -25,7 +25,11 @@ def states_list():
 @app.route('/states/<state_id>', strict_slashes=False)
 def state_cities(state_id):
     """ Display a list of cities in a state """
-    state = storage.get(State, state_id)
+    state = None
+    for obj in storage.all(State).values():
+        if obj.id == state_id:
+            state = obj
+            break
     if state is None:
         return render_template('9-not_found.html')
     cities = sorted(state.cities, key=lambda c: c.name)
