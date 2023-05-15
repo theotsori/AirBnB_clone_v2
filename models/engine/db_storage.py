@@ -86,7 +86,7 @@ class DBStorage:
         """Create database session
         """
         # create session from current engine
-        Base.metadata.create_all(self.__engine)
+        # Base.metadata.create_all(self.__engine)
         # create db tables
         session = sessionmaker(bind=self.__engine,
                                expire_on_commit=False)

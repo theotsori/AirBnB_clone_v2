@@ -2,12 +2,11 @@
 """
 Fabric script that distributes an archive to web servers
 """
-from fabric.api import env, task
+from fabric.api import env
 
 env.hosts = ['54.144.138.53', '35.168.7.192']
 
 
-@task
 def do_deploy(archive_path):
     """
     Deploys an archive to the web servers.
@@ -19,7 +18,7 @@ def do_deploy(archive_path):
       True if the deployment was successful, False otherwise.
     """
     if archive_path:
-    """ Upload archive to /tmp/ """
+        """ Upload archive to /tmp/ """
 
         put(archive_path, '/tmp/')
 
